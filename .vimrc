@@ -205,14 +205,16 @@ let g:tagbar_sort             = 0
 
 " ----- Coc -----
 " Scroll popup window
-nnoremap <expr> <c-d> Scroll_cursor_popup(1) ? '<esc>' : '<c-d>'
-nnoremap <expr> <c-u> Scroll_cursor_popup(0) ? '<esc>' : '<c-u>'
+if !has('nvim')
+  nnoremap <expr> <c-d> Scroll_cursor_popup(1) ? '<esc>' : '<c-d>'
+  nnoremap <expr> <c-u> Scroll_cursor_popup(0) ? '<esc>' : '<c-u>'
+endif
 
 " Use <c-space> to trigger completion. DOESN'T WORK
 if has('nvim')
-inoremap <silent><expr> <c-space> coc#refresh()
+  inoremap <silent><expr> <c-space> coc#refresh()
 else
-inoremap <silent><expr> <c-@> coc#refresh()
+  inoremap <silent><expr> <c-@> coc#refresh()
 endif
 
 " GoTo code navigation.
@@ -303,13 +305,25 @@ endfunction
 
 " ----- Coc -----
 " Scroll documentation with coc
-" it's necessary to test entire rect, as some popup might be quite
-" small
 function! Scroll_cursor_popup(down)
   let winid = Find_cursor_popup()
   if winid == 0
     return 0
   endif
+
+  let pp = popup_getpos(winid)
+  call popup_setoptions(winid,
+      \ {'firstline': pp.firstline + ( a:down ? 1 : -1) } )
+
+  return 1
+endfunction
+
+function! Find_cursor_popup(...)
+  let radius = get(a:000, 0, 2)
+  let srow = screenrow()
+  let scol = screencol()
+
+  " it's necessary to test entire rect, as some popup might be quite small
   for r in range(srow - radius, srow + radius)
     for c in range(scol - radius, scol + radius)
       let winid = popup_locate(r, c)
@@ -320,18 +334,6 @@ function! Scroll_cursor_popup(down)
   endfor
 
   return 0
-endfunction
-
-
-function! Find_cursor_popup(...)
-let radius = get(a:000, 0, 2)
-let srow = screenrow()
-let scol = screencol()
-let pp = popup_getpos(winid)
-call popup_setoptions(winid,
-      \ {'firstline': pp.firstline + ( a:down ? 1 : -1) } )
-
-return 1
 endfunction
 
 " Show documentation with coc using 'K'
